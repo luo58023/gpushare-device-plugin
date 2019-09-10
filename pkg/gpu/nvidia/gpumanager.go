@@ -2,6 +2,8 @@ package nvidia
 
 import (
 	"fmt"
+	"net"
+	"net/rpc"
 	"syscall"
 	"time"
 
@@ -22,6 +24,16 @@ func NewSharedGPUManager(enableMPS, healthCheck bool, bp MemoryUnit) *sharedGPUM
 		enableMPS:   enableMPS,
 		healthCheck: healthCheck,
 	}
+}
+
+//由rpc协议去注册获取实际空闲GPU资源  并启动
+func rpcStart() {
+	err := rpc.Register(new(GpuStatus))
+	check(err)
+	listener, err := net.Listen("tcp", ":8666")
+	check(err)
+	log.V(1).Info("tcp port listened for rpc: 8666")
+	rpc.Accept(listener)
 }
 
 func (ngm *sharedGPUManager) Run() error {
@@ -47,6 +59,9 @@ func (ngm *sharedGPUManager) Run() error {
 		return err
 	}
 	defer watcher.Close()
+
+	//通过协程启动rpc服务
+	go rpcStart()
 
 	log.V(1).Infoln("Starting OS watcher.")
 	sigs := newOSWatcher(syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)

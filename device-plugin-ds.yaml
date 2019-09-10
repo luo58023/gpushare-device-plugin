@@ -26,6 +26,10 @@ spec:
           - -logtostderr
           - --v=5
           - --memory-unit=GiB
+        # 通过hostPort的方式将rpc服务的端口暴露在本机的8666端口上
+        ports:
+        - containerPort: 8666
+          hostPort: 8666
         resources:
           limits:
             memory: "300Mi"

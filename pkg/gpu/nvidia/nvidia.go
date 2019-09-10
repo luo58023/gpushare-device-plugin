@@ -150,3 +150,17 @@ func watchXIDs(ctx context.Context, devs []*pluginapi.Device, xids chan<- *plugi
 		}
 	}
 }
+
+//添加获取实际剩余GPU资源的功能
+type GpuStatus struct{}
+
+func (*GpuStatus) GetFreeMemoryById(in uint, out *uint64) error {
+	device, err := nvml.NewDevice(in)
+	check(err)
+	status, err := device.Status()
+	if err != nil {
+		log.Error(err)
+	}
+	*out = *status.Memory.Global.Free
+	return nil
+}
